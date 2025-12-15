@@ -1,46 +1,87 @@
 import platform
 import psutil
 
+VERSION_SCRIPT = "1.0"
+
 def bytes_to_gigabytes(bytes_value):
     gigabytes = bytes_value / (1024 ** 3)
     return round(gigabytes, 2)
 
-def systeme_exploitation():
-    os_name = platform.system()
-    print("f{os_name}")
+def afficher_infos_systeme():
+    print("Informations Système")
+    print(f"Système d'exploitation : {platform.system()}")
+    print(f"Version du système : {platform.release()}")
+    print(f"Architecture : {platform.machine()} ({platform.architecture()[0]})")
+    print(f"Nom de la machine (Hostname) : {platform.node()}")
+    print(f"Version de Python : {platform.python_version()}")
+    print("-" * 40)
+
+
+
+def afficher_cpu():
+    print("Métriques CPU")
     
-    if os_name == "Windows":
+    coeurs_physiques = psutil.cpu_count(logical=False)
+    coeurs_logiques = psutil.cpu_count(logical=True)
+    
+    print(f"Nombre de coeurs physiques : {coeurs_physiques}")
+    print(f"Nombre de coeurs logiques (Threads) : {coeurs_logiques}")
+
+    utilisation_cpu = psutil.cpu_percent(interval=None) 
+    print(f"Pourcentage d'utilisation actuel : {utilisation_cpu}%")
+    print("-" * 40)
+
+
+
+def afficher_memoire():
+    print("Métriques Mémoire (RAM)")
+    
+    ram = psutil.virtual_memory()
+
+    ram_totale_go = bytes_to_gigabytes(ram.total)
+    ram_disponible_go = bytes_to_gigabytes(ram.available)
+
+    print(f"Mémoire totale * {ram_totale_go} Go")
+    print(f"Mémoire disponible : {ram_disponible_go} Go")
+    
+    pourcentage_utilisation = ram.percent
+    print(f"Pourcentage d'utilisation : {pourcentage_utilisation}%")
+    print("-" * 40)
+
+
+
+def afficher_disques():
+    print("Utilisation des Disques")
+
+    try:
+        partitions = psutil.disk_partitions(all=False)
+    except Exception as e:
+        print(f"Erreur lors de la récupération des partitions : {e}")
+        return
+
+    print("Point de Montage, Pourcentage d'Utilisation ")
+
+    for partition in partitions:
+        point_de_montage = partition.mountpoint
         
-        version = platform.release()
-        print(f"{version}")
-        
-        architecture = platform.machine()
-        print(f"{architecture}")
-        
-        version_python = platform.version()
-        print(f"{version_python}")
-        
-        nom_hostname = platform.node()
-        print(f"{nom_hostname}")
+        try:
+            usage = psutil.disk_usage(point_de_montage)
+            pourcentage_utilisation = f"{usage.percent:.1f}%"
+            
+            print(f"| {point_de_montage} | {pourcentage_utilisation} |")
 
-        coeurs_physiques = psutil.cpu_count(logical=False)
-        print(f"{coeurs_physiques}")
+        except PermissionError:
+            print(f"| {point_de_montage} | Erreur de permission |")
+        except FileNotFoundError:
+            print(f"| {point_de_montage} | Point introuvable |")
+        except Exception as e:
+            print(f"| {point_de_montage} | Erreur ({e}) |")
+            
+    print("-" * 40)
 
-        coeurs_logiques = psutil.cpu_count(logical=True)
-        print(f"{coeurs_logiques}")
-
-        utilisation_cpu = psutil.cpu_percent(interval=None)
-        print(f"{utilisation_cpu}%")
-
-        ram = psutil.virtual_memory()
-
-        ram_totale_go = bytes_to_gigabytes(ram.total)
-        print(f"{ram_totale_go} Go")
-
-        ram_disponible_go = bytes_to_gigabytes(ram.available)
-        print(f"{ram_disponible_go} Go")
-
-        pourcentage_utilisation = ram.percent
-        print(f"{pourcentage_utilisation}%")
-
-systeme_exploitation()
+if __name__ == "__main__":
+    
+    afficher_infos_systeme()
+    afficher_cpu()
+    afficher_memoire()
+    afficher_disques()
